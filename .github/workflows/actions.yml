@@ -26,8 +26,12 @@ jobs:
             echo "type=prerelease" >> "$GITHUB_OUTPUT"
           elif [[ "$TAG" =~ -draft-.*$ ]]; then
             echo "type=draft" >> "$GITHUB_OUTPUT"
-          if [[ "$TAG" =~ ^v?[0-9]+(\.[0-9]+)*$ ]]; then
+          elif [[ "$TAG" =~ ^v?[0-9]+(\.[0-9]+)*$ ]]; then
             echo "type=release" >> "$GITHUB_OUTPUT"
+          else
+            echo "type=unknown" >> "$GITHUB_OUTPUT"
+            echo "Error: Unrecognized tag format '$TAG'" >&2
+            exit 1
           fi
       
       - name: Create GitHub Release
@@ -40,6 +44,7 @@ jobs:
   publish:
     runs-on: windows-latest
     if: needs.classify-and-release.outputs.type == 'release'
+    environment: "NuGet Publish"
     steps:
       - name: Checkout
         uses: actions/checkout@v4.2.2
