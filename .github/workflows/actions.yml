@@ -7,6 +7,9 @@ on:
 
 jobs:
   classify-and-release:
+    permissions:
+      contents: write
+      statuses: read
     runs-on: ubuntu-latest
     outputs:
       tag:  ${{ steps.classify.outputs.tag }}
