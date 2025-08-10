@@ -1,0 +1,52 @@
+name: 📦 Publish Release
+
+on:
+  push:
+    tags:
+      - '*'   # fire on every pushed tag
+
+jobs:
+  classify-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+      
+      - name: Classify Tag
+        id: classify
+        shell: bash
+        run: |
+          # Strip the ref prefix to get just "1.2.3" or "v1.2.3-alpha" etc
+          TAG="${GITHUB_REF#refs/tags/}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          if [[ "$TAG" =~ -(alpha|beta|rc)-.*$ ]]; then
+            echo "type=prerelease" >> "$GITHUB_OUTPUT"
+          elif [[ "$TAG" =~ -draft-.*$ ]]; then
+            echo "type=draft" >> "$GITHUB_OUTPUT"
+          if [[ "$TAG" =~ ^v?[0-9]+(\.[0-9]+)*$ ]]; then
+            echo "type=release" >> "$GITHUB_OUTPUT"
+          fi
+      
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        with:
+          tag_name: ${{ steps.classify.outputs.tag }}
+          release_name: Release ${{ steps.classify.outputs.tag }}
+          draft:      ${{ steps.classify.outputs.type == 'draft' }}
+          prerelease: ${{ steps.classify.outputs.type == 'prerelease' }}
+  publish:
+    runs-on: windows-latest
+    if: steps.classify.outputs.type == 'prerelease'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+      - name: Publish PowerShell
+        uses: natescherer/publish-powershell-action@v1.0.3
+        with:
+          # Token to authenticate.
+          token: ${{ secrets.NUGET_APIKEY }}
+          # Set to `packages` for GitHub Packages, `gallery` for the PowerShell Gallery, or `nuget` for a NuGet repository.
+          target: gallery
+          path: .
+          # Url to use with NuGet target. Should be a NuGet v2 or v3 endpoint.
+          # nugetUrl: # optional
