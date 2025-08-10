@@ -36,12 +36,15 @@ jobs:
       
       - name: Create GitHub Release
         uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ steps.classify.outputs.tag }}
           release_name: Release ${{ steps.classify.outputs.tag }}
           draft:      ${{ steps.classify.outputs.type == 'draft' }}
           prerelease: ${{ steps.classify.outputs.type == 'prerelease' }}
   publish:
+    needs: classify-and-release
     runs-on: windows-latest
     if: needs.classify-and-release.outputs.type == 'release'
     environment: "NuGet Publish"
