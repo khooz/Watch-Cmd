@@ -8,6 +8,9 @@ on:
 jobs:
   classify-and-release:
     runs-on: ubuntu-latest
+    outputs:
+      tag:  ${{ steps.classify.outputs.tag }}
+      type: ${{ steps.classify.outputs.type }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4.2.2
@@ -36,7 +39,7 @@ jobs:
           prerelease: ${{ steps.classify.outputs.type == 'prerelease' }}
   publish:
     runs-on: windows-latest
-    if: steps.classify.outputs.type == 'prerelease'
+    if: needs.classify-and-release.outputs.type == 'release'
     steps:
       - name: Checkout
         uses: actions/checkout@v4.2.2
